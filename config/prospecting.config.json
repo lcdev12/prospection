@@ -1,5 +1,12 @@
 {
   "niches": ["auto ecole", "plombier", "macon"],
-  "cities": ["Melun", "Evry", "Creteil", "Versailles", "Nanterre"],
-  "defaultLimitPerSearch": 10
+  "cities": [
+    "Melun", "Evry", "Creteil", "Versailles", "Nanterre",
+    "Montreuil", "Vincennes", "Saint-Denis", "Argenteuil", "Boulogne-Billancourt",
+    "Aubervilliers", "Vitry-sur-Seine", "Champigny-sur-Marne", "Courbevoie", "Rueil-Malmaison",
+    "Saint-Maur-des-Fosses", "Meaux", "Pontoise", "Massy", "Palaiseau",
+    "Corbeil-Essonnes", "Savigny-sur-Orge", "Brunoy", "Draveil", "Grigny",
+    "Longjumeau", "Mantes-la-Jolie", "Poissy", "Sartrouville", "Conflans-Sainte-Honorine"
+  ],
+  "defaultLimitPerSearch": 20
 }
