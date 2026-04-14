@@ -155,11 +155,33 @@ const extractLeadFromPage = async (
         byDataItemId("address") ||
         (addrFallback ? addrFallback.textContent.trim() : "");
 
-      var phoneFallback = document.querySelector('[data-item-id^="phone"]');
-      var phone =
-        byAriaLabel(["telephone", "phone"]) ||
-        byDataItemId("phone:tel") ||
-        (phoneFallback ? phoneFallback.textContent.trim() : "");
+      // Strategy 1: data-item-id contains the number after the last colon
+      // e.g. data-item-id="phone:tel:+33164378822"
+      var phoneEl = document.querySelector('[data-item-id^="phone:tel:"]');
+      var phone = "";
+      if (phoneEl) {
+        var itemId = phoneEl.getAttribute("data-item-id") || "";
+        var parts = itemId.split(":");
+        phone = parts[parts.length - 1] || "";
+      }
+      // Strategy 2: aria-label of the phone button contains the number
+      // e.g. aria-label="Appeler le 01 64 37 88 22"
+      if (!phone) {
+        var allEls = Array.from(document.querySelectorAll("button, a, [role='button'], [data-item-id^='phone']"));
+        for (var pi = 0; pi < allEls.length; pi++) {
+          var lbl2 = allEls[pi].getAttribute("aria-label") || "";
+          var numMatch = lbl2.match(/(\\+?[0-9][0-9\\s\\.\\-]{7,15})/);
+          if (numMatch) { phone = numMatch[1].trim(); break; }
+        }
+      }
+      // Strategy 3: any element whose text looks like a phone number
+      if (!phone) {
+        var allSpans = Array.from(document.querySelectorAll("span, div"));
+        for (var si = 0; si < allSpans.length; si++) {
+          var t = (allSpans[si].textContent || "").trim();
+          if (/^(\\+?[0-9][0-9\\s\\.\\-]{7,15})$/.test(t)) { phone = t; break; }
+        }
+      }
 
       var websiteEl = document.querySelector('a[data-item-id="authority"]');
       var website = websiteEl ? (websiteEl.href || websiteEl.textContent.trim()) : "";
