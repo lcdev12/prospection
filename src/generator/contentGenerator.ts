@@ -1,7 +1,7 @@
 import { computePriority, detectProblem } from "../filters/priorityScorer.js";
 import type { EnrichedLead, RawLead } from "../types.js";
 
-const buildEmail = (lead: RawLead, problem: string): string => {
+const buildColdEmail = (lead: RawLead, problem: string): string => {
   return [
     `Bonjour ${lead.name},`,
     "",
@@ -14,7 +14,10 @@ const buildEmail = (lead: RawLead, problem: string): string => {
 };
 
 const buildCallNote = (lead: RawLead, priority: EnrichedLead["priority"], problem: string): string => {
-  return `Priorite ${priority}: ${lead.name} (${lead.city}) - angle d'appel: ${problem}. Proposer un mini-audit concret.`;
+  const contactHint = lead.email
+    ? `Email dispo: ${lead.email}.`
+    : "Pas d'email visible, appel direct.";
+  return `Priorite ${priority}: ${lead.name} (${lead.city}) - angle: ${problem}. ${contactHint} Proposer un mini-audit concret.`;
 };
 
 export const enrichLeads = (leads: RawLead[]): EnrichedLead[] => {
@@ -26,7 +29,7 @@ export const enrichLeads = (leads: RawLead[]): EnrichedLead[] => {
       ...lead,
       priority,
       problem,
-      email: buildEmail(lead, problem),
+      coldEmail: buildColdEmail(lead, problem),
       call_note: buildCallNote(lead, priority, problem)
     };
   });

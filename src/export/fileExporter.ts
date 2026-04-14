@@ -19,10 +19,11 @@ export const exportLeads = async (leads: EnrichedLead[]): Promise<{ jsonPath: st
       Name: lead.name,
       City: lead.city,
       Phone: lead.phone,
+      Email: lead.email,
       Website: lead.website,
       Priority: lead.priority,
       Problem: lead.problem,
-      Email: lead.email,
+      "Cold Email": lead.coldEmail,
       "Call Note": lead.call_note
     })),
     { header: true }

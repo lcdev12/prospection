@@ -98,10 +98,36 @@ const collectPlaceUrls = async (
   return hrefs.slice(0, limit);
 };
 
+// ─── Scrape email from a business website (uses a dedicated page/tab) ────────
+
+const scrapeEmailFromWebsite = async (emailPage: Page, websiteUrl: string): Promise<string> => {
+  try {
+    await emailPage.goto(websiteUrl, { waitUntil: "domcontentloaded", timeout: 15_000 });
+    await emailPage.waitForTimeout(600);
+
+    const email = await emailPage.evaluate(`
+      (function() {
+        var links = Array.from(document.querySelectorAll('a[href^="mailto:"]'));
+        if (links.length > 0) {
+          return (links[0].getAttribute("href") || "").replace("mailto:", "").split("?")[0].trim();
+        }
+        var body = document.body ? document.body.innerText : "";
+        var m = body.match(/[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/);
+        return m ? m[0] : "";
+      })()
+    `) as string;
+
+    return (email ?? "").trim();
+  } catch {
+    return "";
+  }
+};
+
 // ─── Extract lead data from a place detail page ───────────────────────────────
 
 const extractLeadFromPage = async (
   page: Page,
+  emailPage: Page,
   placeUrl: string,
   niche: string,
   city: string
@@ -123,7 +149,7 @@ const extractLeadFromPage = async (
   // page.evaluate(string) executes the expression directly in the browser.
   type EvalResult = {
     name: string; address: string; phone: string;
-    website: string; ratingText: string; reviewsText: string;
+    website: string; emailText: string; ratingText: string; reviewsText: string;
   };
   const data = await page.evaluate(`
     (function() {
@@ -206,17 +232,37 @@ const extractLeadFromPage = async (
         if (revEl) reviewsText = revEl.getAttribute("aria-label") || "";
       }
 
-      return { name: name, address: address, phone: phone, website: website, ratingText: ratingText, reviewsText: reviewsText };
+      // ── Email (mailto: links on Google Maps page) ────────────────────────────
+      var emailText = "";
+      var mailtoLinks = Array.from(document.querySelectorAll('a[href^="mailto:"]'));
+      if (mailtoLinks.length > 0) {
+        emailText = (mailtoLinks[0].getAttribute("href") || "").replace("mailto:", "").split("?")[0].trim();
+      }
+      if (!emailText) {
+        // Scan all text nodes for an email pattern
+        var allText = document.body ? document.body.innerText : "";
+        var emailMatch = allText.match(/[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/);
+        if (emailMatch) emailText = emailMatch[0];
+      }
+
+      return { name: name, address: address, phone: phone, website: website, emailText: emailText, ratingText: ratingText, reviewsText: reviewsText };
     })()
   `) as EvalResult;
 
   if (!data.name) return null;
+
+  // If no email on Google Maps, visit the business website on a separate tab
+  let scrapedEmail = normalizeText(data.emailText);
+  if (!scrapedEmail && data.website) {
+    scrapedEmail = await scrapeEmailFromWebsite(emailPage, data.website);
+  }
 
   return {
     name: normalizeText(data.name),
     address: normalizeText(data.address),
     city,
     phone: normalizeText(data.phone),
+    email: scrapedEmail,
     website: normalizeText(data.website),
     rating: parseRating(data.ratingText),
     reviews: parseReviewCount(data.reviewsText),
@@ -239,6 +285,8 @@ export const scrapeGoogleMaps = async (options: ScrapeOptions): Promise<RawLead[
       "Chrome/124.0.0.0 Safari/537.36",
   });
   const page = await context.newPage();
+  // Dedicated tab for website email scraping — never interrupts the Google Maps page
+  const emailPage = await context.newPage();
   const collected: RawLead[] = [];
 
   try {
@@ -256,7 +304,7 @@ export const scrapeGoogleMaps = async (options: ScrapeOptions): Promise<RawLead[
 
         for (const [index, url] of placeUrls.entries()) {
           logger.info(`  Extracting ${index + 1}/${placeUrls.length}: ${url}`);
-          const lead = await extractLeadFromPage(page, url, businessType, location);
+          const lead = await extractLeadFromPage(page, emailPage, url, businessType, location);
           if (lead) {
             collected.push(lead);
             logger.info(`    -> OK: ${lead.name}`);

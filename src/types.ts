@@ -5,6 +5,7 @@ export interface RawLead {
   address: string;
   city: string;
   phone: string;
+  email: string;       // scraped directly from Google Maps or the business website
   website: string;
   rating: number | null;
   reviews: number | null;
@@ -14,7 +15,7 @@ export interface RawLead {
 export interface EnrichedLead extends RawLead {
   priority: Priority;
   problem: string;
-  email: string;
+  coldEmail: string;   // AI-generated cold outreach email
   call_note: string;
 }
 
