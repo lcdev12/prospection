@@ -1,0 +1,26 @@
+{
+  "name": "prospection",
+  "version": "1.0.0",
+  "description": "Local business prospecting automation tool",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "scrape": "tsx src/cli/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "LCDEV",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "csv-stringify": "^6.7.0",
+    "minimist": "^1.2.8",
+    "playwright": "^1.59.1"
+  },
+  "devDependencies": {
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}

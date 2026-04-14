@@ -1,0 +1,5 @@
+{
+  "niches": ["auto ecole", "plombier", "macon"],
+  "cities": ["Melun", "Evry", "Creteil", "Versailles", "Nanterre"],
+  "defaultLimitPerSearch": 10
+}
